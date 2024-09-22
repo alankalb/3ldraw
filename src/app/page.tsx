@@ -1,13 +1,18 @@
 'use client';
 
-import { Tldraw } from 'tldraw';
+import { Tldraw, DefaultCanvas } from 'tldraw';
 import 'tldraw/tldraw.css';
 import { Canvas } from './canvas';
+
+const threeD = true;
 
 export default function Home() {
   return (
     <main className='fixed inset-0'>
-      <Tldraw persistenceKey='3ldraw' components={{ Canvas: Canvas }} />
+      <Tldraw
+        persistenceKey='3ldraw'
+        components={{ Canvas: threeD ? Canvas : DefaultCanvas }}
+      />
     </main>
   );
 }
