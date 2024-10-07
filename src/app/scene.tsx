@@ -3,10 +3,11 @@ import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { useEditor, useIsDarkMode, track } from 'tldraw';
 import { TlPage } from '../ui/TlPage';
-import { CameraControls, PivotControls } from '@react-three/drei';
+import { CameraControls } from '@react-three/drei';
 
 const BLACK = new THREE.Color(0x101011);
 const WHITE = new THREE.Color(0xf9fafb);
+const SCALE = 0.01;
 
 export const Scene = track(() => {
   const editor = useEditor();
@@ -24,14 +25,16 @@ export const Scene = track(() => {
   return (
     <>
       <CameraControls dollyToCursor infinityDolly ref={cameraControlsRef} />
-      {pages.map((page) => (
-        <TlPage
-          key={page.id}
-          id={page.id}
-          isCurrent={page.id === currentPageId}
-          cameraControls={cameraControlsRef.current}
-        />
-      ))}
+      <group scale={[SCALE, SCALE, SCALE]}>
+        {pages.map((page) => (
+          <TlPage
+            key={page.id}
+            id={page.id}
+            isCurrent={page.id === currentPageId}
+            cameraControls={cameraControlsRef.current}
+          />
+        ))}
+      </group>
     </>
   );
 });

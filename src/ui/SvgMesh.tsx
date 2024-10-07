@@ -13,26 +13,56 @@ export const SvgMesh = ({ svg, renderOrder }: SvgMeshProps) => {
 
   useEffect(() => {
     if (!groupRef.current) return;
-    const { paths } = loader.parse(svg);
+    const parsedSvg = loader.parse(svg);
+    const { paths } = parsedSvg;
 
-    for (let i = 0; i < paths.length; i++) {
-      const path = paths[i];
+    for (const path of paths) {
+      const fillColor = path.userData?.style.fill;
 
-      const material = new THREE.MeshBasicMaterial({
-        color: path.color,
-        side: THREE.DoubleSide,
-        polygonOffset: true,
-        polygonOffsetFactor: -renderOrder * 0.1,
-      });
+      if (fillColor !== undefined && fillColor !== 'none') {
+        const material = new THREE.MeshBasicMaterial({
+          color: new THREE.Color().setStyle(fillColor),
+          opacity: path.userData?.style.fillOpacity,
+          transparent: true,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+        });
 
-      const shapes = SVGLoader.createShapes(path);
+        const shapes = SVGLoader.createShapes(path);
 
-      for (let j = 0; j < shapes.length; j++) {
-        const shape = shapes[j];
-        const geometry = new THREE.ShapeGeometry(shape);
-        const mesh = new THREE.Mesh(geometry, material);
-        mesh.renderOrder = renderOrder;
-        groupRef.current.add(mesh);
+        for (const shape of shapes) {
+          const geometry = new THREE.ShapeGeometry(shape);
+          const mesh = new THREE.Mesh(geometry, material);
+          mesh.renderOrder = renderOrder++;
+
+          groupRef.current.add(mesh);
+        }
+      }
+
+      const strokeColor = path.userData?.style.stroke;
+
+      if (strokeColor !== undefined && strokeColor !== 'none') {
+        const material = new THREE.MeshBasicMaterial({
+          color: new THREE.Color().setStyle(strokeColor),
+          opacity: path.userData?.style.strokeOpacity,
+          transparent: true,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+        });
+
+        for (const subPath of path.subPaths) {
+          const geometry = SVGLoader.pointsToStroke(
+            subPath.getPoints(),
+            path.userData?.style
+          );
+
+          if (geometry) {
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.renderOrder = renderOrder++;
+
+            groupRef.current.add(mesh);
+          }
+        }
       }
     }
   }, [svg]);
