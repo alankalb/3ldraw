@@ -4,6 +4,7 @@ import { useRef } from 'react';
 import { TlShape } from './TlShape';
 import { CameraControls, Line, PivotControls } from '@react-three/drei';
 import { PageBounds } from './PageBounds';
+import { ThreeEvent } from '@react-three/fiber';
 
 interface TlPageProps {
   id: TLPageId;
@@ -21,7 +22,8 @@ export const TlPage = track(
 
     if (!page) return;
 
-    const handlePageSelect = () => {
+    const handlePageSelect = (e: ThreeEvent<MouseEvent>) => {
+      e.stopPropagation();
       if (isCurrent) return;
       editor.setCurrentPage(id);
     };
@@ -49,6 +51,7 @@ export const TlPage = track(
       <PivotControls
         ref={pivotRef}
         depthTest={false}
+        scale={100}
         lineWidth={3}
         anchor={[0, 0, 0]}
         onDragStart={handleDragStart}

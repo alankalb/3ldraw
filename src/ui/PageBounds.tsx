@@ -8,14 +8,11 @@ interface PageBoundsProps {
 }
 
 export const PageBounds = track(({ id, isCurrent }: PageBoundsProps) => {
-  const boundsRef = useRef<THREE.BufferGeometry>(null);
+  const boundsRef = useRef<THREE.Mesh>(null);
   const editor = useEditor();
   const shapeIds = Array.from(editor.getPageShapeIds(id));
 
   useEffect(() => {
-    if (!isCurrent) return;
-    console.log('test');
-
     if (!boundsRef.current) return;
     const bounds = compact(shapeIds.map((id) => editor.getShapePageBounds(id)));
 
@@ -29,28 +26,27 @@ export const PageBounds = track(({ id, isCurrent }: PageBoundsProps) => {
       box = Box.Common(bounds);
     }
 
-    const bottomLeft = new THREE.Vector3(box.x, box.y, 0);
-    const bottomRight = new THREE.Vector3(box.x + box.width, box.y, 0);
-    const topLeft = new THREE.Vector3(box.x, box.y + box.height, 0);
-    const topRight = new THREE.Vector3(
-      box.x + box.width,
-      box.y + box.height,
+    const plane = new THREE.PlaneGeometry(box.width, box.height);
+    boundsRef.current.geometry = plane;
+    boundsRef.current.position.set(
+      box.width / 2 + box.x,
+      box.height / 2 + box.y,
       0
     );
-    boundsRef.current.setFromPoints([
-      bottomLeft,
-      bottomRight,
-      topRight,
-      topLeft,
-      bottomLeft,
-    ]);
   }, [editor, shapeIds, isCurrent]);
 
   return (
-    <lineLoop visible={isCurrent}>
-      <bufferGeometry ref={boundsRef}></bufferGeometry>
-      <lineBasicMaterial color={'white'} />
-    </lineLoop>
+    <mesh visible={true} ref={boundsRef}>
+      <meshBasicMaterial
+        color={isCurrent ? 'yellow' : 'white'}
+        transparent
+        opacity={0.05}
+        side={THREE.DoubleSide}
+        polygonOffset
+        polygonOffsetFactor={0.1}
+        depthTest={false}
+      />
+    </mesh>
   );
 });
 
