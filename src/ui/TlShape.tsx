@@ -11,6 +11,7 @@ interface TlShapeProps {
 export const TlShape = track(({ id, renderOrder }: TlShapeProps) => {
   const editor = useEditor();
   const isHovered = editor.getHoveredShapeId() === id;
+  const isSelected = editor.getSelectedShapeIds().includes(id);
   const shape = editor.getShape(id);
 
   if (!shape) return;
@@ -29,7 +30,7 @@ export const TlShape = track(({ id, renderOrder }: TlShapeProps) => {
       <SvgMesh svg={svg} renderOrder={renderOrder} />
       <ShapeIndicator
         svg={indicatorSvg}
-        visible={isHovered}
+        visible={isHovered || isSelected}
         strokeColor={selectColor}
       />
     </group>
