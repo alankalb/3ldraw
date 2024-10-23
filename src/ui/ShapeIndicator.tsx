@@ -18,6 +18,7 @@ export const ShapeIndicator = ({
 
   useEffect(() => {
     if (!groupRef.current) return;
+    const group = groupRef.current;
     const parsedSvg = loader.parse(svg);
     const { paths } = parsedSvg;
 
@@ -39,11 +40,15 @@ export const ShapeIndicator = ({
         if (geometry) {
           const mesh = new THREE.Mesh(geometry, material);
           mesh.renderOrder = Number.MAX_SAFE_INTEGER;
-          groupRef.current.add(mesh);
+          group.add(mesh);
         }
       }
     }
-  }, [svg]);
+
+    return () => {
+      group.children.length = 0;
+    };
+  }, [svg, loader, strokeColor]);
 
   return <group ref={groupRef} visible={visible} />;
 };

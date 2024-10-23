@@ -13,6 +13,7 @@ export const SvgMesh = ({ svg, renderOrder }: SvgMeshProps) => {
 
   useEffect(() => {
     if (!groupRef.current) return;
+    const group = groupRef.current;
     const parsedSvg = loader.parse(svg);
     const { paths } = parsedSvg;
 
@@ -65,6 +66,10 @@ export const SvgMesh = ({ svg, renderOrder }: SvgMeshProps) => {
         }
       }
     }
+
+    return () => {
+      group.children.length = 0;
+    };
   }, [svg]);
 
   return <group ref={groupRef} />;

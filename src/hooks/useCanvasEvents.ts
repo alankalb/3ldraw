@@ -1,15 +1,18 @@
 import * as THREE from 'three';
 import { useThree } from '@react-three/fiber';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect } from 'react';
 
-import { Box, getPointerInfo, useEditor } from 'tldraw';
+import { getPointerInfo, TLCamera, useEditor } from 'tldraw';
+
+const RIGHT_MOUSE_BUTTON = 2;
 
 export function useCanvasEvents() {
   const editor = useEditor();
 
-  const { gl, raycaster, scene } = useThree();
+  const { gl, raycaster } = useThree();
   const selectedPage = editor.getCurrentPage();
   const selectedPageId = editor.getCurrentPageId();
+  const camera = editor.getCamera();
   const pageMatrix = selectedPage.meta.matrix as number[] | undefined;
 
   useEffect(() => {
@@ -44,13 +47,60 @@ export function useCanvasEvents() {
       return intersection;
     };
 
-    const handleMouseMove = (event: PointerEvent) => {
+    function onPointerDown(e: PointerEvent) {
+      if ((e as any).isKilled) return;
+
       const intersection = getPageIntersectionPoint(raycaster.ray);
       if (!intersection) return;
 
-      const camera = editor.getCamera();
+      if (e.button === RIGHT_MOUSE_BUTTON) {
+        editor.dispatch({
+          type: 'pointer',
+          target: 'canvas',
+          name: 'right_click',
+          ...get3dPointerInfo(e, intersection, camera),
+        });
+        return;
+      }
 
-      const pointerInfo = getPointerInfo(event);
+      if (e.button !== 0 && e.button !== 1 && e.button !== 5) return;
+
+      // setPointerCapture(e.currentTarget, e);
+
+      editor.dispatch({
+        type: 'pointer',
+        target: 'canvas',
+        name: 'pointer_down',
+        ...get3dPointerInfo(e, intersection, camera),
+      });
+    }
+
+    function onPointerUp(e: PointerEvent) {
+      if ((e as any).isKilled) return;
+      const intersection = getPageIntersectionPoint(raycaster.ray);
+      if (!intersection) return;
+      if (e.button !== 0 && e.button !== 1 && e.button !== 2 && e.button !== 5)
+        return;
+      // lastX = e.clientX;
+      // lastY = e.clientY;
+
+      // releasePointerCapture(e.currentTarget, e);
+
+      editor.dispatch({
+        type: 'pointer',
+        target: 'canvas',
+        name: 'pointer_up',
+        ...get3dPointerInfo(e, intersection, camera),
+      });
+    }
+
+    function onPointerMove(e: PointerEvent) {
+      if ((e as any).isKilled) return;
+
+      const intersection = getPageIntersectionPoint(raycaster.ray);
+      if (!intersection) return;
+
+      const pointerInfo = getPointerInfo(e);
       // Adjust pointer info based on zoom to fit camera position
       pointerInfo.point.x = (intersection.x + camera.x) * camera.z;
       pointerInfo.point.y = (-intersection.y + camera.y) * camera.z;
@@ -59,14 +109,31 @@ export function useCanvasEvents() {
         type: 'pointer',
         target: 'canvas',
         name: 'pointer_move',
-        ...pointerInfo,
+        ...get3dPointerInfo(e, intersection, camera),
       });
-    };
+    }
 
-    gl.domElement.addEventListener('pointermove', handleMouseMove);
+    gl.domElement.addEventListener('pointermove', onPointerMove);
+    gl.domElement.addEventListener('pointerdown', onPointerDown);
+    gl.domElement.addEventListener('pointerup', onPointerUp);
 
     return () => {
-      gl.domElement.removeEventListener('pointermove', handleMouseMove);
+      gl.domElement.removeEventListener('pointermove', onPointerMove);
+      gl.domElement.removeEventListener('pointerdown', onPointerDown);
+      gl.domElement.removeEventListener('pointerup', onPointerUp);
     };
-  }, [selectedPageId, gl, raycaster, editor, pageMatrix]);
+  }, [selectedPageId, gl, raycaster, editor, pageMatrix, camera]);
 }
+
+const get3dPointerInfo = (
+  e: PointerEvent,
+  intersection: THREE.Vector3,
+  camera: TLCamera
+) => {
+  const pointerInfo = getPointerInfo(e);
+  // Adjust pointer info based on zoom to fit camera position
+  pointerInfo.point.x = (intersection.x + camera.x) * camera.z;
+  pointerInfo.point.y = (-intersection.y + camera.y) * camera.z;
+
+  return pointerInfo;
+};
